@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<bindings>
+    <context name="VehicleDriveBase" append="true">
+		<action name="Unlimit" map="ToggleSprint_Button" />
+    </context>
+</bindings>
