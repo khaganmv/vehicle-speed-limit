@@ -26,6 +26,9 @@ public class VehicleSpeedLimit extends ScriptableSystem {
 @addField(VehicleComponent)
 let toggledSprint: Bool = false;
 
+@addField(VehicleComponent)
+let decelerating: Bool = false;
+
 @addMethod(VehicleComponent)
 public func GetSpeedometerUnits() -> Int32 {
     let configVarListString = GameInstance
@@ -55,6 +58,11 @@ private final func RegisterInputListener() -> Void {
         .GetPlayerSystem(this.GetVehicle().GetGame())
         .GetLocalPlayerMainGameObject()
         .RegisterInputListener(this, n"Unlimit");
+
+    GameInstance
+        .GetPlayerSystem(this.GetVehicle().GetGame())
+        .GetLocalPlayerMainGameObject()
+        .RegisterInputListener(this, n"Decelerate");
 }
 
 @wrapMethod(VehicleComponent)
@@ -66,18 +74,25 @@ protected cb func OnAction(action: ListenerAction, consumer: ListenerActionConsu
     {
         this.toggledSprint = !this.toggledSprint;
     };
+
+    if Equals(action.GetName(), n"Decelerate") {
+        this.decelerating = true;
+    };
 }
 
 @wrapMethod(VehicleComponent)
 protected final func OnVehicleSpeedChange(speed: Float) -> Void {
+    wrappedMethod(speed);
+
     let speedLimit = VehicleSpeedLimit.GetInstance(this.GetVehicle().GetGame()).speedLimit;
     let isMetric = this.GetSpeedometerUnits() != 1;
 
     if this.SpeedToSpeedometerUnits(speed, isMetric) >= speedLimit 
     && !this.toggledSprint 
+    && !this.decelerating
     {
         this.GetVehicle().ForceBrakesFor(0.01);
     };
 
-    wrappedMethod(speed);
+    this.decelerating = false;
 }
