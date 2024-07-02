@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <bindings>
+    <mapping name="Release_Button" type="Button" >
+        <button id="IK_Pad_DigitDown" />
+    </mapping>
+
     <context name="VehicleDriveBase" append="true">
-		<action name="Unlimit" map="ToggleSprint_Button" />
+        <action name="Release" map="Release_Button" />
     </context>
 </bindings>
