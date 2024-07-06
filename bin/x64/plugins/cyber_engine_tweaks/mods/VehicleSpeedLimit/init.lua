@@ -1,116 +1,163 @@
-local decelerating = false
-local enabled = true
-local limited = false
-local speedLimit = 40
+local GameUI = require("modules/psiberx/GameUI")
+local config = require("modules/keanuWheeze/config")
+local inputManager = require("modules/keanuWheeze/inputManager")
+local utils = require("modules/utils")
 
-local function initializeNativeSettingsUI()
+local defaultSettings = {
+    enabled = true,
+    speedLimit = 40,
+    limited = false,
+    keyboard = {
+        ["mkbBinding_1"] = "IK_LShift",
+        ["mkbBinding_hold_1"] = false,
+        ["mkbBinding_keys"] = 1
+    },
+    pad = {
+        ["padBinding_1"] = "IK_Pad_DigitDown",
+        ["padBinding_hold_1"] = false,
+        ["padBinding_keys"] = 1
+    }
+}
+
+local settings = {}
+local runtimeData = {
+    inMenu = false,
+    inGame = false,
+    decelerating = false
+}
+
+local function initBindingInfo()
+    local keyboardBindingInfo = utils.createBindingInfo(
+        inputManager,
+        "/vehicleSpeedLimit/hotkeyMKB",
+        "mkbBinding",
+        defaultSettings.keyboard,
+        settings.keyboard,
+        function()
+            if utils.isInVehicle() then
+                settings.limited = not settings.limited
+            end
+        end,
+        function (name, value)
+            settings.keyboard[name] = value
+            config.saveFile("config.json", settings)
+        end
+    )
+
+    local gamepadBindingInfo = utils.createBindingInfo(
+        inputManager,
+        "/vehicleSpeedLimit/hotkeyPad",
+        "padBinding",
+        defaultSettings.pad,
+        settings.pad,
+        function()
+            if utils.isInVehicle() then
+                settings.limited = not settings.limited
+            end
+        end,
+        function (name, value)
+            settings.pad[name] = value
+            config.saveFile("config.json", settings)
+        end
+    )
+
+    inputManager.addNativeSettingsBinding(keyboardBindingInfo)
+    inputManager.addNativeSettingsBinding(gamepadBindingInfo)
+end
+
+local function initNativeSettingsUI()
     local nativeSettings = GetMod("nativeSettings")
 
-    if not nativeSettings then 
-        print("Native Settings UI not found")
-        return false 
+    if not nativeSettings then
+        print("[VehicleSpeedLimit] Info: NativeSettings lib not found!")
+        return
     end
 
-    nativeSettings.addTab(
-        "/vehicleSpeedLimit", 
-        "Vehicle Speed Limit"
-    )
+    nativeSettings.addTab("/vehicleSpeedLimit", "Vehicle Speed Limit")
+    
+    nativeSettings.addSubcategory("/vehicleSpeedLimit/mod", "Mod")
     nativeSettings.addSwitch(
-        "/vehicleSpeedLimit",
+        "/vehicleSpeedLimit/mod",
         "Enabled",
         "",
-        enabled,
+        settings.enabled,
         true,
-        function (state) enabled = state end
+        function (state) settings.enabled = state end
     )
     nativeSettings.addRangeInt(
-        "/vehicleSpeedLimit",
+        "/vehicleSpeedLimit/mod",
         "Speed Limit",
         "",
         0, 300, 1, 
-        speedLimit, 40,
-        function (value) speedLimit = value end
+        settings.speedLimit, 40,
+        function (value) settings.speedLimit = value end
     )
-
-    return true
+    
+    nativeSettings.addSubcategory("/vehicleSpeedLimit/hotkeyMKB", "Keyboard Hotkey")
+    nativeSettings.addSubcategory("/vehicleSpeedLimit/hotkeyPad", "Controller Hotkey")
+    initBindingInfo()
 end
 
-local function isInVehicle()
-    return Game.GetMountedVehicle(Game.GetPlayer()) ~= nil
-end
-
-local function getSpeedometerUnits()
-    local configVarListString = GameInstance
-        .GetSettingsSystem()
-        :GetGroup("/interface")
-        :GetVar("SpeedometerUnits")
-
-    return configVarListString:GetIndex()
-end
-
-local function speedToSpeedometerUnits(speed, isMetric)
-    local velocity = AbsF(speed)
-    local multiplier = GameInstance
-        .GetStatsDataSystem()
-        :GetValueFromCurve("vehicle_ui", velocity, "speed_to_multiplier")
-    local unit = 1
-
-    if isMetric then
-        unit = 1.61
-    end
-
-    return RoundMath(velocity * multiplier * unit)
-end
-
-registerInput("release", "Release", function (keypress)
-    if keypress 
-    and isInVehicle() 
-    and enabled
-    then
-        limited = not limited
-    end
+registerForEvent("onHook", function ()
+    inputManager.onHook()
 end)
 
-registerForEvent("onInit", function ()
-    if not initializeNativeSettingsUI() then
-        print("Failed to initialize Native Settings UI")
+registerForEvent("onInit", function()
+    if not Codeware then
+        print("[VehicleSpeedLimit] Error: Missing Codeware")
     end
+
+    config.tryCreateConfig("config.json", defaultSettings)
+    config.backwardComp("config.json", defaultSettings)
+    settings = config.loadFile("config.json")
+
+    initNativeSettingsUI()
+
+    GameUI.OnSessionStart(function()
+        runtimeData.inGame = true
+    end)
+
+    GameUI.OnSessionEnd(function()
+        runtimeData.inGame = false
+    end)
+
+    runtimeData.inGame = not GameUI.IsDetached()
+
+    Observe('RadialWheelController', 'OnIsInMenuChanged', function(_, isInMenu)
+        runtimeData.inMenu = isInMenu
+    end)
 
     Observe("VehicleComponent", "RegisterInputListener", function (self)
         Game.GetPlayerSystem()
             :GetLocalPlayerMainGameObject()
             :RegisterInputListener(self, "Decelerate")
-
-        Game.GetPlayerSystem()
-            :GetLocalPlayerMainGameObject()
-            :RegisterInputListener(self, "Release")
     end)
-    
-    Observe("VehicleComponent", "OnAction", function (self, action, consumer)
-        local actionName = action:GetName().value
-        
-        if actionName == "Decelerate" then
-            decelerating = true
-        end
 
-        if actionName == "Release"
-        and ListenerAction.IsButtonJustPressed(action)
-        then
-            limited = not limited
+    Observe("VehicleComponent", "OnAction", function (self, action, consumer)
+        if action:GetName().value == "Decelerate" then
+            runtimeData.decelerating = true
         end
     end)
 
     Observe("VehicleComponent", "OnVehicleSpeedChange", function (self, speed)
-        local isMetric = getSpeedometerUnits() ~= 1
-
-        if limited
-        and speedToSpeedometerUnits(speed, isMetric) >= speedLimit
-        and not decelerating 
-        and enabled
+        if settings.limited
+        and utils.speedToSpeedometerUnits(speed) >= settings.speedLimit
+        and not runtimeData.decelerating
+        and settings.enabled
         then
             self:GetVehicle():ForceBrakesFor(0.01)
         end
 
-        decelerating = false
+        runtimeData.decelerating = false
     end)
+end)
+
+registerForEvent("onUpdate", function(dt)
+    if not runtimeData.inMenu and runtimeData.inGame then
+        inputManager.onUpdate(dt)
+    end
+end)
+
+registerForEvent("onShutdown", function ()
+    config.saveFile("config.json", settings)
 end)
