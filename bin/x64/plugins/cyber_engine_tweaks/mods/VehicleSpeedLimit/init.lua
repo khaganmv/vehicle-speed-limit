@@ -5,6 +5,7 @@ local utils = require("modules/utils")
 
 local defaultSettings = {
     enabled = true,
+    enabledLimitWidget = true,
     speedLimit = 40,
     limited = false,
     keyboard = {
@@ -26,6 +27,13 @@ local runtimeData = {
     decelerating = false
 }
 
+local function shouldDisplayLimitWidget()
+    return settings.enabled
+       and settings.enabledLimitWidget
+       and settings.limited
+       and utils.isInVehicle()
+end
+
 local function initBindingInfo()
     local keyboardBindingInfo = utils.createBindingInfo(
         inputManager,
@@ -34,7 +42,7 @@ local function initBindingInfo()
         defaultSettings.keyboard,
         settings.keyboard,
         function()
-            if utils.isInVehicle() then
+            if settings.enabled and utils.isInVehicle() then
                 settings.limited = not settings.limited
             end
         end,
@@ -43,7 +51,6 @@ local function initBindingInfo()
             config.saveFile("config.json", settings)
         end
     )
-
     local gamepadBindingInfo = utils.createBindingInfo(
         inputManager,
         "/vehicleSpeedLimit/hotkeyPad",
@@ -51,7 +58,7 @@ local function initBindingInfo()
         defaultSettings.pad,
         settings.pad,
         function()
-            if utils.isInVehicle() then
+            if settings.enabled and utils.isInVehicle() then
                 settings.limited = not settings.limited
             end
         end,
@@ -83,6 +90,20 @@ local function initNativeSettingsUI()
         settings.enabled,
         true,
         function (state) settings.enabled = state end
+    )
+    nativeSettings.addSwitch(
+        "/vehicleSpeedLimit/mod",
+        "Limit Widget",
+        "",
+        settings.enabledLimitWidget,
+        defaultSettings.enabledLimitWidget,
+        function (state) 
+            settings.enabledLimitWidget = state
+
+            if runtimeData.limitWidget ~= nil then
+                runtimeData.limitWidget:SetVisible(shouldDisplayLimitWidget())
+            end
+        end
     )
     nativeSettings.addRangeInt(
         "/vehicleSpeedLimit/mod",
@@ -149,6 +170,30 @@ registerForEvent("onInit", function()
         end
 
         runtimeData.decelerating = false
+    end)
+
+    Observe("VehicleComponent", "OnMountingEvent", function ()
+        if runtimeData.limitWidget == nil then
+            runtimeData.limitWidget = utils.getOrCreateLimitWidget(shouldDisplayLimitWidget())
+        end
+
+        runtimeData.limitWidget:SetVisible(shouldDisplayLimitWidget())
+	end)
+
+    Observe("VehicleComponent", "OnUnmountingEvent", function ()
+        if runtimeData.limitWidget then
+            runtimeData.limitWidget:SetVisible(false)
+        end
+	end)
+
+    Observe("hudCarController", "OnSpeedValueChanged", function (self)
+        if runtimeData.limitWidget then
+            local scale = self:GetRootWidget():GetParentWidget():GetScale()
+
+            utils.updateLimitWidgetMargin(runtimeData.limitWidget)
+            runtimeData.limitWidget:SetScale(scale)
+            runtimeData.limitWidget:SetVisible(shouldDisplayLimitWidget())
+        end
     end)
 end)
 
