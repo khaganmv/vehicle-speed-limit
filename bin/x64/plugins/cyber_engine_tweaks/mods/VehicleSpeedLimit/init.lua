@@ -7,14 +7,34 @@ local defaultSettings = {
     enabled = true,
     enabledLimitWidget = true,
     limited = false,
-    speedLimit = 40,
+    speedLimits = {
+        40,
+        60,
+        80,
+    },
+    currentSpeedLimitIndex = 1,
     speedLimitIncrement = 20,
     bindings = {
         keyboard = {
-            limit = {
-                ["keyboardLimit_1"] = "IK_LShift",
-                ["keyboardLimit_hold_1"] = false,
-                ["keyboardLimit_keys"] = 1
+            toggleLimit = {
+                ["keyboardToggleLimit_1"] = "IK_LShift",
+                ["keyboardToggleLimit_hold_1"] = false,
+                ["keyboardToggleLimit_keys"] = 1
+            },
+            selectPreset1 = {
+                ["keyboardSelectPreset1_1"] = "IK_5",
+                ["keyboardSelectPreset1_hold_1"] = false,
+                ["keyboardSelectPreset1_keys"] = 1
+            },
+            selectPreset2 = {
+                ["keyboardSelectPreset2_1"] = "IK_6",
+                ["keyboardSelectPreset2_hold_1"] = false,
+                ["keyboardSelectPreset2_keys"] = 1
+            },            
+            selectPreset3 = {
+                ["keyboardSelectPreset3_1"] = "IK_7",
+                ["keyboardSelectPreset3_hold_1"] = false,
+                ["keyboardSelectPreset3_keys"] = 1
             },
             increaseLimit = {
                 ["keyboardIncreaseLimit_1"] = "IK_Comma",
@@ -28,18 +48,33 @@ local defaultSettings = {
             },
         },
         gamepad = {
-            limit = {
-                ["gamepadLimit_1"] = "IK_Pad_DigitDown",
-                ["gamepadLimit_hold_1"] = false,
-                ["gamepadLimit_keys"] = 1
+            toggleLimit = {
+                ["gamepadToggleLimit_1"] = "",
+                ["gamepadToggleLimit_hold_1"] = false,
+                ["gamepadToggleLimit_keys"] = 1
+            },
+            selectPreset1 = {
+                ["gamepadSelectPreset1_1"] = "",
+                ["gamepadSelectPreset1_hold_1"] = false,
+                ["gamepadSelectPreset1_keys"] = 1
+            },
+            selectPreset2 = {
+                ["gamepadSelectPreset2_1"] = "",
+                ["gamepadSelectPreset2_hold_1"] = false,
+                ["gamepadSelectPreset2_keys"] = 1
+            },            
+            selectPreset3 = {
+                ["gamepadSelectPreset3_1"] = "",
+                ["gamepadSelectPreset3_hold_1"] = false,
+                ["gamepadSelectPreset3_keys"] = 1
             },
             increaseLimit = {
-                ["gamepadIncreaseLimit_1"] = "IK_Pad_LeftShoulder",
+                ["gamepadIncreaseLimit_1"] = "",
                 ["gamepadIncreaseLimit_hold_1"] = false,
                 ["gamepadIncreaseLimit_keys"] = 1
             },
             decreaseLimit = {
-                ["gamepadDecreaseLimit_1"] = "IK_Pad_DigitLeft",
+                ["gamepadDecreaseLimit_1"] = "",
                 ["gamepadDecreaseLimit_hold_1"] = false,
                 ["gamepadDecreaseLimit_keys"] = 1
             },
@@ -62,19 +97,67 @@ local function shouldDisplayLimitWidget()
 end
 
 local function initBindingInfo()
-    local keyboardLimitBindingInfo = utils.createBindingInfo(
+    local keyboardToggleLimitBindingInfo = utils.createBindingInfo(
         inputManager,
-        "/vehicleSpeedLimit/keyboardLimit",
-        "keyboardLimit",
-        defaultSettings.bindings.keyboard.limit,
-        settings.bindings.keyboard.limit,
+        "/vehicleSpeedLimit/keyboardToggleLimit",
+        "keyboardToggleLimit",
+        defaultSettings.bindings.keyboard.toggleLimit,
+        settings.bindings.keyboard.toggleLimit,
         function()
             if settings.enabled and utils.isInVehicle() then
                 settings.limited = not settings.limited
             end
         end,
         function (name, value)
-            settings.bindings.keyboard.limit[name] = value
+            settings.bindings.keyboard.toggleLimit[name] = value
+            config.saveFile("config.json", settings)
+        end
+    )
+    local keyboardSelectPreset1BindingInfo = utils.createBindingInfo(
+        inputManager,
+        "/vehicleSpeedLimit/keyboardSelectPreset1",
+        "keyboardSelectPreset1",
+        defaultSettings.bindings.keyboard.selectPreset1,
+        settings.bindings.keyboard.selectPreset1,
+        function()
+            if settings.enabled and utils.isInVehicle() then
+                settings.currentSpeedLimitIndex = 1
+            end
+        end,
+        function (name, value)
+            settings.bindings.keyboard.selectPreset1[name] = value
+            config.saveFile("config.json", settings)
+        end
+    )
+    local keyboardSelectPreset2BindingInfo = utils.createBindingInfo(
+        inputManager,
+        "/vehicleSpeedLimit/keyboardSelectPreset2",
+        "keyboardSelectPreset2",
+        defaultSettings.bindings.keyboard.selectPreset2,
+        settings.bindings.keyboard.selectPreset2,
+        function()
+            if settings.enabled and utils.isInVehicle() then
+                settings.currentSpeedLimitIndex = 2
+            end
+        end,
+        function (name, value)
+            settings.bindings.keyboard.selectPreset2[name] = value
+            config.saveFile("config.json", settings)
+        end
+    )
+    local keyboardSelectPreset3BindingInfo = utils.createBindingInfo(
+        inputManager,
+        "/vehicleSpeedLimit/keyboardSelectPreset3",
+        "keyboardSelectPreset3",
+        defaultSettings.bindings.keyboard.selectPreset3,
+        settings.bindings.keyboard.selectPreset3,
+        function()
+            if settings.enabled and utils.isInVehicle() then
+                settings.currentSpeedLimitIndex = 3
+            end
+        end,
+        function (name, value)
+            settings.bindings.keyboard.selectPreset3[name] = value
             config.saveFile("config.json", settings)
         end
     )
@@ -86,7 +169,7 @@ local function initBindingInfo()
         settings.bindings.keyboard.increaseLimit,
         function()
             if settings.enabled and utils.isInVehicle() then
-                settings.speedLimit = settings.speedLimit + settings.speedLimitIncrement
+                settings.speedLimits[settings.currentSpeedLimitIndex] = settings.speedLimits[settings.currentSpeedLimitIndex] + settings.speedLimitIncrement
             end
         end,
         function (name, value)
@@ -102,10 +185,10 @@ local function initBindingInfo()
         settings.bindings.keyboard.decreaseLimit,
         function()
             if settings.enabled and utils.isInVehicle() then
-                settings.speedLimit = settings.speedLimit - settings.speedLimitIncrement
+                settings.speedLimits[settings.currentSpeedLimitIndex] = settings.speedLimits[settings.currentSpeedLimitIndex] - settings.speedLimitIncrement
 
-                if settings.speedLimit < 0 then
-                    settings.speedLimit = 0
+                if settings.speedLimits[settings.currentSpeedLimitIndex] < 0 then
+                    settings.speedLimits[settings.currentSpeedLimitIndex] = 0
                 end
             end
         end,
@@ -114,19 +197,67 @@ local function initBindingInfo()
             config.saveFile("config.json", settings)
         end
     )
-    local gamepadLimitBindingInfo = utils.createBindingInfo(
+    local gamepadToggleLimitBindingInfo = utils.createBindingInfo(
         inputManager,
-        "/vehicleSpeedLimit/gamepadLimit",
-        "gamepadLimit",
-        defaultSettings.bindings.gamepad.limit,
-        settings.bindings.gamepad.limit,
+        "/vehicleSpeedLimit/gamepadToggleLimit",
+        "gamepadToggleLimit",
+        defaultSettings.bindings.gamepad.toggleLimit,
+        settings.bindings.gamepad.toggleLimit,
         function()
             if settings.enabled and utils.isInVehicle() then
                 settings.limited = not settings.limited
             end
         end,
         function (name, value)
-            settings.bindings.gamepad.limit[name] = value
+            settings.bindings.gamepad.toggleLimit[name] = value
+            config.saveFile("config.json", settings)
+        end
+    )
+    local gamepadSelectPreset1BindingInfo = utils.createBindingInfo(
+        inputManager,
+        "/vehicleSpeedLimit/gamepadSelectPreset1",
+        "gamepadSelectPreset1",
+        defaultSettings.bindings.gamepad.selectPreset1,
+        settings.bindings.gamepad.selectPreset1,
+        function()
+            if settings.enabled and utils.isInVehicle() then
+                settings.currentSpeedLimitIndex = 1
+            end
+        end,
+        function (name, value)
+            settings.bindings.gamepad.selectPreset1[name] = value
+            config.saveFile("config.json", settings)
+        end
+    )
+    local gamepadSelectPreset2BindingInfo = utils.createBindingInfo(
+        inputManager,
+        "/vehicleSpeedLimit/gamepadSelectPreset2",
+        "gamepadSelectPreset2",
+        defaultSettings.bindings.gamepad.selectPreset2,
+        settings.bindings.gamepad.selectPreset2,
+        function()
+            if settings.enabled and utils.isInVehicle() then
+                settings.currentSpeedLimitIndex = 2
+            end
+        end,
+        function (name, value)
+            settings.bindings.gamepad.selectPreset2[name] = value
+            config.saveFile("config.json", settings)
+        end
+    )
+    local gamepadSelectPreset3BindingInfo = utils.createBindingInfo(
+        inputManager,
+        "/vehicleSpeedLimit/gamepadSelectPreset3",
+        "gamepadSelectPreset3",
+        defaultSettings.bindings.gamepad.selectPreset3,
+        settings.bindings.gamepad.selectPreset3,
+        function()
+            if settings.enabled and utils.isInVehicle() then
+                settings.currentSpeedLimitIndex = 3
+            end
+        end,
+        function (name, value)
+            settings.bindings.gamepad.selectPreset3[name] = value
             config.saveFile("config.json", settings)
         end
     )
@@ -138,7 +269,7 @@ local function initBindingInfo()
         settings.bindings.gamepad.increaseLimit,
         function()
             if settings.enabled and utils.isInVehicle() then
-                settings.speedLimit = settings.speedLimit + settings.speedLimitIncrement
+                settings.speedLimits[settings.currentSpeedLimitIndex] = settings.speedLimits[settings.currentSpeedLimitIndex] + settings.speedLimitIncrement
             end
         end,
         function (name, value)
@@ -154,10 +285,10 @@ local function initBindingInfo()
         settings.bindings.gamepad.decreaseLimit,
         function()
             if settings.enabled and utils.isInVehicle() then
-                settings.speedLimit = settings.speedLimit - settings.speedLimitIncrement
+                settings.speedLimits[settings.currentSpeedLimitIndex] = settings.speedLimits[settings.currentSpeedLimitIndex] - settings.speedLimitIncrement
 
-                if settings.speedLimit < 0 then
-                    settings.speedLimit = 0
+                if settings.speedLimits[settings.currentSpeedLimitIndex] < 0 then
+                    settings.speedLimits[settings.currentSpeedLimitIndex] = 0
                 end
             end
         end,
@@ -167,10 +298,16 @@ local function initBindingInfo()
         end
     )
 
-    inputManager.addNativeSettingsBinding(keyboardLimitBindingInfo)
+    inputManager.addNativeSettingsBinding(keyboardToggleLimitBindingInfo)
+    inputManager.addNativeSettingsBinding(keyboardSelectPreset1BindingInfo)
+    inputManager.addNativeSettingsBinding(keyboardSelectPreset2BindingInfo)
+    inputManager.addNativeSettingsBinding(keyboardSelectPreset3BindingInfo)
     inputManager.addNativeSettingsBinding(keyboardIncreaseLimitBindingInfo)
     inputManager.addNativeSettingsBinding(keyboardDecreaseLimitBindingInfo)
-    inputManager.addNativeSettingsBinding(gamepadLimitBindingInfo)
+    inputManager.addNativeSettingsBinding(gamepadToggleLimitBindingInfo)
+    inputManager.addNativeSettingsBinding(gamepadSelectPreset1BindingInfo)
+    inputManager.addNativeSettingsBinding(gamepadSelectPreset2BindingInfo)
+    inputManager.addNativeSettingsBinding(gamepadSelectPreset3BindingInfo)
     inputManager.addNativeSettingsBinding(gamepadIncreaseLimitBindingInfo)
     inputManager.addNativeSettingsBinding(gamepadDecreaseLimitBindingInfo)
 end
@@ -210,11 +347,27 @@ local function initNativeSettingsUI()
     )
     nativeSettings.addRangeInt(
         "/vehicleSpeedLimit/mod",
-        "Speed Limit",
+        "Speed Limit (Preset 1)",
         "",
         0, 300, 1, 
-        settings.speedLimit, 40,
-        function (value) settings.speedLimit = value end
+        settings.speedLimits[1], 40,
+        function (value) settings.speedLimits[1] = value end
+    )
+    nativeSettings.addRangeInt(
+        "/vehicleSpeedLimit/mod",
+        "Speed Limit (Preset 2)",
+        "",
+        0, 300, 1, 
+        settings.speedLimits[2], 60,
+        function (value) settings.speedLimits[2] = value end
+    )
+    nativeSettings.addRangeInt(
+        "/vehicleSpeedLimit/mod",
+        "Speed Limit (Preset 3)",
+        "",
+        0, 300, 1, 
+        settings.speedLimits[3], 80,
+        function (value) settings.speedLimits[3] = value end
     )
     nativeSettings.addRangeInt(
         "/vehicleSpeedLimit/mod",
@@ -225,10 +378,16 @@ local function initNativeSettingsUI()
         function (value) settings.speedLimitIncrement = value end
     )
     
-    nativeSettings.addSubcategory("/vehicleSpeedLimit/keyboardLimit", "Keyboard Hotkey (Limit)")
+    nativeSettings.addSubcategory("/vehicleSpeedLimit/keyboardToggleLimit", "Keyboard Hotkey (Toggle Limit)")
+    nativeSettings.addSubcategory("/vehicleSpeedLimit/keyboardSelectPreset1", "Keyboard Hotkey (Select Preset 1)")
+    nativeSettings.addSubcategory("/vehicleSpeedLimit/keyboardSelectPreset2", "Keyboard Hotkey (Select Preset 2)")
+    nativeSettings.addSubcategory("/vehicleSpeedLimit/keyboardSelectPreset3", "Keyboard Hotkey (Select Preset 3)")
     nativeSettings.addSubcategory("/vehicleSpeedLimit/keyboardIncreaseLimit", "Keyboard Hotkey (Increase Limit)")
     nativeSettings.addSubcategory("/vehicleSpeedLimit/keyboardDecreaseLimit", "Keyboard Hotkey (Decrease Limit)")
-    nativeSettings.addSubcategory("/vehicleSpeedLimit/gamepadLimit", "Gamepad Hotkey (Limit)")
+    nativeSettings.addSubcategory("/vehicleSpeedLimit/gamepadToggleLimit", "Gamepad Hotkey (Toggle Limit)")
+    nativeSettings.addSubcategory("/vehicleSpeedLimit/gamepadSelectPreset1", "Gamepad Hotkey (Select Preset 1)")
+    nativeSettings.addSubcategory("/vehicleSpeedLimit/gamepadSelectPreset2", "Gamepad Hotkey (Select Preset 2)")
+    nativeSettings.addSubcategory("/vehicleSpeedLimit/gamepadSelectPreset3", "Gamepad Hotkey (Select Preset 3)")
     nativeSettings.addSubcategory("/vehicleSpeedLimit/gamepadIncreaseLimit", "Gamepad Hotkey (Increase Limit)")
     nativeSettings.addSubcategory("/vehicleSpeedLimit/gamepadDecreaseLimit", "Gamepad Hotkey (Decrease Limit)")
     initBindingInfo()
@@ -277,7 +436,7 @@ registerForEvent("onInit", function()
 
     Observe("VehicleComponent", "OnVehicleSpeedChange", function (self, speed)
         if settings.limited
-        and utils.speedToSpeedometerUnits(speed) >= settings.speedLimit
+        and utils.speedToSpeedometerUnits(speed) >= settings.speedLimits[settings.currentSpeedLimitIndex]
         and not runtimeData.decelerating
         and settings.enabled
         then
