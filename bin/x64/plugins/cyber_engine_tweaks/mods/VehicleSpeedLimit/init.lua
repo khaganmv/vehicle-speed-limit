@@ -410,6 +410,7 @@ registerForEvent("onInit", function()
 
     GameUI.OnSessionStart(function()
         runtimeData.inGame = true
+        runtimeData.limitWidget = utils.getOrCreateLimitWidget(shouldDisplayLimitWidget())
     end)
 
     GameUI.OnSessionEnd(function()
