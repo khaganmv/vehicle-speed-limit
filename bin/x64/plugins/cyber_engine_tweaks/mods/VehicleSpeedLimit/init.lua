@@ -6,6 +6,8 @@ local utils = require("modules/utils")
 local defaultSettings = {
     enabled = true,
     enabledLimitWidget = true,
+    displayLimitWidgetInFPP = true,
+    inFPP = false,
     limited = false,
     speedLimits = {
         40,
@@ -90,10 +92,11 @@ local runtimeData = {
 }
 
 local function shouldDisplayLimitWidget()
-    return settings.enabled
+    return utils.isInVehicle()
+       and settings.enabled
        and settings.enabledLimitWidget
        and settings.limited
-       and utils.isInVehicle()
+       and not (settings.inFPP and not settings.displayLimitWidgetInFPP)
 end
 
 local function initBindingInfo()
@@ -345,6 +348,20 @@ local function initNativeSettingsUI()
             end
         end
     )
+    nativeSettings.addSwitch(
+        "/vehicleSpeedLimit/mod",
+        "Display Limit Widget in FPP",
+        "",
+        settings.displayLimitWidgetInFPP,
+        defaultSettings.displayLimitWidgetInFPP,
+        function (state) 
+            settings.displayLimitWidgetInFPP = state
+
+            if runtimeData.limitWidget ~= nil then
+                runtimeData.limitWidget:SetVisible(shouldDisplayLimitWidget())
+            end
+        end
+    )
     nativeSettings.addRangeInt(
         "/vehicleSpeedLimit/mod",
         "Speed Limit (Preset 1)",
@@ -460,6 +477,10 @@ registerForEvent("onInit", function()
             runtimeData.limitWidget:SetVisible(false)
         end
 	end)
+
+    Observe("VehicleComponent", "OnVehicleCameraChange", function (self, state)
+        settings.inFPP = not state
+    end)
 
     Observe("hudCarController", "OnSpeedValueChanged", function (self)
         if runtimeData.limitWidget then
