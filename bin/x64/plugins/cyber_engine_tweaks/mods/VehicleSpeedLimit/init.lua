@@ -93,6 +93,7 @@ local runtimeData = {
 
 local function shouldDisplayLimitWidget()
     return utils.isInVehicle()
+       and utils.isDriver()
        and settings.enabled
        and settings.enabledLimitWidget
        and settings.limited
@@ -196,7 +197,7 @@ local function initBindingInfo()
             end
         end,
         function (name, value)
-            settings.keyboard.decreaseLimit[name] = value
+            settings.bindings.keyboard.decreaseLimit[name] = value
             config.saveFile("config.json", settings)
         end
     )

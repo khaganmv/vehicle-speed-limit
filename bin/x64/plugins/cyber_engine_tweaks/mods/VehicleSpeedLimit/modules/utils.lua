@@ -4,6 +4,16 @@ function utils.isInVehicle()
     return Game.GetMountedVehicle(Game.GetPlayer()) ~= nil
 end
 
+function utils.isDriver()
+    local mountedVehicle = Game.GetMountedVehicle(Game.GetPlayer())
+
+    if mountedVehicle == nil then
+        return false
+    end
+
+    return VehicleComponent.IsDriver(Game.GetPlayer())
+end
+
 function utils.speedToSpeedometerUnits(speed)
     local velocity = AbsF(speed)
     local multiplier = GameInstance
@@ -48,6 +58,7 @@ function utils.updateLimitWidgetMargin(widget)
 
     local function determineMargin(width, height)
         local margins = {
+            ["5160x2160"] = inkMargin.new({ left = 500, top = 1400, right = 0, bottom = 0 }),
             ["3440x1440"] = inkMargin.new({ left = 415, top = 1170, right = 0, bottom = 0 }),
             ["2560x1440"] = inkMargin.new({ left = 405, top = 1170, right = 0, bottom = 0 }),
             ["2560x1080"] = inkMargin.new({ left = 310, top =  869, right = 0, bottom = 0 }),
@@ -88,8 +99,8 @@ function utils.getOrCreateLimitWidget(visible)
 
     local limitWidget = inkText.new()
 
-	limitWidget:SetName(StringToName("LimitWidget"))
-	limitWidget:SetFontFamily("base\\gameplay\\gui\\fonts\\digital_readout\\digitalreadout.inkfontfamily")
+    limitWidget:SetName(StringToName("LimitWidget"))
+    limitWidget:SetFontFamily("base\\gameplay\\gui\\fonts\\digital_readout\\digitalreadout.inkfontfamily")
     limitWidget:SetFontSize(70)
     limitWidget:SetTintColor(HDRColor.new({
         Red = 0.36862745881081, 
@@ -97,11 +108,11 @@ function utils.getOrCreateLimitWidget(visible)
         Blue = 0.96470594406128, 
         Alpha = 1
     }))
-	limitWidget:SetHorizontalAlignment(textHorizontalAlignment.Center)
-	limitWidget:SetVerticalAlignment(textVerticalAlignment.Center)
-	limitWidget:SetText("L")
+    limitWidget:SetHorizontalAlignment(textHorizontalAlignment.Center)
+    limitWidget:SetVerticalAlignment(textVerticalAlignment.Center)
+    limitWidget:SetText("L")
 
-	limitWidget:Reparent(root, -1)
+    limitWidget:Reparent(root, -1)
     limitWidget:SetVisible(visible)
 
     return limitWidget
