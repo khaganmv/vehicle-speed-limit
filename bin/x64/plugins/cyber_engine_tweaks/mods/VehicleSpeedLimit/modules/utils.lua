@@ -86,12 +86,11 @@ function utils.updateLimitWidgetMargin(widget)
 end
 
 function utils.getOrCreateLimitWidget(visible)
-    local root = GameInstance
+    local virtualWindow = GameInstance
         .GetInkSystem()
         :GetLayer("inkHUDLayer")
         :GetVirtualWindow()
-        :GetWidget("Root")
-    local existingLimitWidget = root:GetWidget("LimitWidget")
+    local existingLimitWidget = virtualWindow:GetWidget("LimitWidget")
 
     if existingLimitWidget and existingLimitWidget:GetName().value == "LimitWidget" then
         return existingLimitWidget
@@ -112,7 +111,7 @@ function utils.getOrCreateLimitWidget(visible)
     limitWidget:SetVerticalAlignment(textVerticalAlignment.Center)
     limitWidget:SetText("L")
 
-    limitWidget:Reparent(root, -1)
+    limitWidget:Reparent(virtualWindow, -1)
     limitWidget:SetVisible(visible)
 
     return limitWidget
