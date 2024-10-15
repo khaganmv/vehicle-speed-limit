@@ -356,24 +356,24 @@ local function initNativeSettingsUI()
         "Speed Limit Preset 1",
         "",
         0, 300, 1, 
-        settings.speedLimits[1], 40,
-        function (value) settings.speedLimits[1] = value end
+        settings.speedLimitPresets[1], 40,
+        function (value) settings.speedLimitPresets[1] = value end
     )
     nativeSettings.addRangeInt(
         "/vehicleSpeedLimit/mod",
         "Speed Limit Preset 2",
         "",
         0, 300, 1, 
-        settings.speedLimits[2], 60,
-        function (value) settings.speedLimits[2] = value end
+        settings.speedLimitPresets[2], 60,
+        function (value) settings.speedLimitPresets[2] = value end
     )
     nativeSettings.addRangeInt(
         "/vehicleSpeedLimit/mod",
         "Speed Limit Preset 3",
         "",
         0, 300, 1, 
-        settings.speedLimits[3], 80,
-        function (value) settings.speedLimits[3] = value end
+        settings.speedLimitPresets[3], 80,
+        function (value) settings.speedLimitPresets[3] = value end
     )
     nativeSettings.addRangeInt(
         "/vehicleSpeedLimit/mod",
